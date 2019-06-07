@@ -34,8 +34,11 @@ lav_start <- function(start.method    = "default",
         start[ which(lavpartable$op == "=~") ] <- 1.0
         start[ which(lavpartable$op == "~*~") ] <- 1.0
         ov.names.ord <- vnames(lavpartable, "ov.ord")
-        var.idx <- which(lavpartable$op == "~~" & lavpartable$lhs == lavpartable$rhs &
+        
+        var.idx <- which(lavpartable$op == "~~" & 
+                         lavpartable$lhs == lavpartable$rhs &
                          !(lavpartable$lhs %in% ov.names.ord))
+        
         start[var.idx] <- 1.0
         user.idx <- which(!is.na(lavpartable$ustart))
         start[user.idx] <- lavpartable$ustart[user.idx]

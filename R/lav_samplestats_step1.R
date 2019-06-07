@@ -11,14 +11,16 @@ lav_samplestats_step1 <- function(Y,
     # just in case Y is a vector
     Y <- as.matrix(Y)
 
-    nvar <- NCOL(Y); N <- NROW(Y)
+    nvar <- NCOL(Y)
+    N <- NROW(Y)
+    
     nTH <- ov.levels - 1L; nTH[nTH == -1L] <- 1L
     nth <- sum(nTH)
     th.end.idx <- cumsum(nTH); th.start.idx <- th.end.idx - (nTH - 1L)
 
     # variable types; default = numeric
     nexo <- length(ov.names.x)
-    if(nexo > 0L) stopifnot(NCOL(eXo) == nexo)
+    if (nexo > 0L) stopifnot(NCOL(eXo) == nexo)
 
     # means/thresholds/intercepts, slopes, variances
     TH       <- vector("list", length=nvar)
@@ -37,12 +39,12 @@ lav_samplestats_step1 <- function(Y,
     FIT <- vector("list", length=nvar)
 
     # stage one - TH/SLOPES/VAR only
-    for(i in 1:nvar) {
+    for (i in 1:nvar) {
         th.idx <- th.start.idx[i]:th.end.idx[i]
         sl.idx <- seq(i, by=nvar, length.out=nexo)
-        if(ov.types[i] == "numeric") {
+        if (ov.types[i] == "numeric") {
             fit <- lavOLS(y=Y[,i], X=eXo)
-            if( any(is.na(fit$theta)) ) {
+            if ( any(is.na(fit$theta)) ) {
                 stop("lavaan ERROR: linear regression failed for ",ov.names[i],
                      "; X may not be of full rank in group ", group)
             }
@@ -51,40 +53,40 @@ lav_samplestats_step1 <- function(Y,
             TH[[i]] <- TH.NOX[[i]] <- unname(fit$theta[1L])
             VAR[i] <- unname(fit$theta[fit$npar])
             TH.NAMES[[i]] <- ov.names[i]; TH.IDX[[i]] <- 0L
-            if(scores.flag) {
+            if (scores.flag) {
                 scores <- fit$scores()
                 SC.TH[,th.idx] <- scores[,1L]
                 SC.VAR[,i] <- scores[,fit$npar]
             }
-            if(nexo > 0L) {
+            if (nexo > 0L) {
                 SLOPES[i,] <- fit$theta[-c(1L, fit$npar)]
-                if(scores.flag) {
+                if (scores.flag) {
                     SC.SL[,sl.idx] <- scores[,-c(1L, fit$npar),drop=FALSE]
                 }
                 TH.NOX[[i]] <- mean(Y[,i], na.rm=TRUE)
             }
-        } else if(ov.types[i] == "ordered") {
+        } else if (ov.types[i] == "ordered") {
             # check if we have enough categories in this group
             # FIXME: should we more tolerant here???
             y.freq <- tabulate(Y[,i], nbins=ov.levels[i])
-            if(length(y.freq) != ov.levels[i])
+            if (length(y.freq) != ov.levels[i])
                 stop("lavaan ERROR: variable ", ov.names[i], " has fewer categories (", length(y.freq), ") than expected (", ov.levels[i], ") in group ", group)
-            if(any(y.freq == 0L))
+            if (any(y.freq == 0L))
                 stop("lavaan ERROR: some categories of variable `", ov.names[i], "' are empty in group ", group, "; frequencies are [", paste(y.freq, collapse=" "), "]")
             fit <- lavProbit(y=Y[,i], X=eXo)
-            if( any(is.na(fit$theta)) ) {
+            if ( any(is.na(fit$theta)) ) {
                 stop("lavaan ERROR: probit regression failed for ",ov.names[i],
                      "; X may not be of full rank in group ", group)
             }
             FIT[[i]] <- fit
             TH[[i]] <- unname(fit$theta[fit$th.idx])
             TH.NOX[[i]] <- pc_th(Y=Y[,i])
-            if(scores.flag) {
+            if (scores.flag) {
                 scores <- fit$scores()
                 SC.TH[,th.idx] <- scores[,fit$th.idx,drop=FALSE]
             }
             SLOPES[i,] <- fit$theta[fit$slope.idx]
-            if(scores.flag) {
+            if (scores.flag) {
                 SC.SL[,sl.idx] <- scores[,fit$slope.idx,drop=FALSE]
             }
             VAR[i] <- 1.0
